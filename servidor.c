@@ -14,22 +14,18 @@ void send_list(int sockfd, struct sockaddr_in *cliaddr, socklen_t len) {
     const char *list[] = {"Bohemian Rhapsody - ID = 'Bohemian'", "Radio Ga Ga - ID = 'Radio'", "I want to break free - ID = 'Break'"};
     int num_elements = sizeof(list) / sizeof(list[0]);
     char buffer[MAXLINE];
-
     // Construir la lista en una cadena
     strcpy(buffer, "Lista de elementos: (Si desea recibir uno, escriba su ID)\n");
     for (int i = 0; i < num_elements; ++i) {
         strcat(buffer, list[i]);
         strcat(buffer, "\n");
     }
-
     // Enviar la lista al cliente
     sendto(sockfd, buffer, strlen(buffer), 0, (const struct sockaddr *)cliaddr, len);
-
     // Enviar delimitador de final de archivo al cliente
     char *end_of_file = "EOR";
     sendto(sockfd, end_of_file, strlen(end_of_file), 0, (const struct sockaddr *)cliaddr, len);
 }
-
 
 //Funcion para leer un archivo y mandar su contenido por medio del socket
 void send_file_content(int sockfd, struct sockaddr_in *cliaddr, socklen_t len, const char *filename) {
