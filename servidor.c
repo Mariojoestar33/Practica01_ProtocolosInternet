@@ -16,7 +16,7 @@ void send_list(int sockfd, struct sockaddr_in *cliaddr, socklen_t len) {
     char buffer[MAXLINE];
 
     // Construir la lista en una cadena
-    strcpy(buffer, "Lista de elementos:\n");
+    strcpy(buffer, "Lista de elementos: (Si desea recibir uno, escriba su ID)\n");
     for (int i = 0; i < num_elements; ++i) {
         strcat(buffer, list[i]);
         strcat(buffer, "\n");
@@ -24,6 +24,10 @@ void send_list(int sockfd, struct sockaddr_in *cliaddr, socklen_t len) {
 
     // Enviar la lista al cliente
     sendto(sockfd, buffer, strlen(buffer), 0, (const struct sockaddr *)cliaddr, len);
+
+    // Enviar delimitador de final de archivo al cliente
+    char *end_of_file = "EOR";
+    sendto(sockfd, end_of_file, strlen(end_of_file), 0, (const struct sockaddr *)cliaddr, len);
 }
 
 void send_file_content(int sockfd, struct sockaddr_in *cliaddr, socklen_t len, const char *filename) {
@@ -32,18 +36,19 @@ void send_file_content(int sockfd, struct sockaddr_in *cliaddr, socklen_t len, c
         perror("Error al abrir el archivo");
         return;
     }
+    
     char buffer[MAXLINE];
     size_t bytes_read;
-    // Obtener la longitud del archivo
-    fseek(file, 0, SEEK_END);
-    size_t file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    // Enviar la longitud del archivo al cliente
-    sendto(sockfd, &file_size, sizeof(file_size), 0, (const struct sockaddr *)cliaddr, len);
+    
     // Leer el contenido del archivo y enviarlo al cliente
     while ((bytes_read = fread(buffer, 1, MAXLINE, file)) > 0) {
         sendto(sockfd, buffer, bytes_read, 0, (const struct sockaddr *)cliaddr, len);
     }
+    
+    // Enviar delimitador de final de archivo al cliente
+    char *end_of_file = "EOF";
+    sendto(sockfd, end_of_file, strlen(end_of_file), 0, (const struct sockaddr *)cliaddr, len);
+    
     fclose(file);
 }
 
@@ -52,7 +57,7 @@ int main() {
     int sockfd;
     struct sockaddr_in servaddr, cliaddr;
     char buffer[MAXLINE];
-    const char *welcome_message = "¡Bienvenido al servidor UDP!\n";
+    const char *welcome_message = "¡Bienvenido al servidor UDP!\n-lista";
 
     // Crear un socket UDP
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -107,13 +112,10 @@ int main() {
         } else {
             // Enviar un mensaje de bienvenida al cliente
             sendto(sockfd, welcome_message, strlen(welcome_message), 0, (const struct sockaddr *)&cliaddr, len);
+            char *end_of_file = "EOR";
+            sendto(sockfd, end_of_file, strlen(end_of_file), 0, (const struct sockaddr *)&cliaddr, len);
             printf("Mensaje de bienvenida enviado.\n");
         }
-        /*else {
-            // Enviar un mensaje de bienvenida al cliente si no coincide con ningún ID de la lista
-            sendto(sockfd, welcome_message, strlen(welcome_message), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
-            printf("Mensaje de bienvenida enviado.\n");
-        }*/
         memset(buffer, 0, sizeof(buffer));
     }
 
